@@ -77,6 +77,8 @@ export default {
       const { to, to_name, consumer_name, hcp, cp_stage, days_inactive, closing_overdue, gaps, zoho_url } = body;
       if (!to || !consumer_name) return json({ error: 'Missing required fields: to, consumer_name' }, 400);
 
+      // In test mode (onboarding@resend.dev), route all emails to TEST_EMAIL or account owner
+      const actualTo = env.TEST_EMAIL || to;
       const subject = `Action required: ${consumer_name} — HCA follow-up overdue`;
       const gap_list = (gaps || []).map(g => `<li style="margin-bottom:6px">${g}</li>`).join('');
       const zoho_btn = zoho_url
@@ -134,7 +136,7 @@ export default {
           },
           body: JSON.stringify({
             from: env.FROM_EMAIL,
-            to: [to],
+            to: [actualTo],
             subject,
             html,
           }),
