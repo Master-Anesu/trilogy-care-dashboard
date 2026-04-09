@@ -198,6 +198,33 @@ select:focus{outline:none;border-color:var(--teal)}
 .footer{border-top:1px solid var(--rule);padding:.85rem 2rem;display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;background:var(--surface)}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
 
+/* REP DASHBOARD */
+.rep-dash-header{display:flex;align-items:center;gap:16px;margin-bottom:1.5rem;flex-wrap:wrap}
+.rep-dash-avatar{width:56px;height:56px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0}
+.rep-dash-info h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:2px}
+.rep-dash-info .rep-email{font-size:12px;color:var(--dim);font-family:'DM Mono',monospace}
+.rep-dash-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0}
+.breakdown-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:'DM Mono',monospace;background:var(--teal);color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;transition:all .15s}
+.breakdown-btn:hover{background:var(--teal-light)}
+.breakdown-btn:disabled{opacity:.5;cursor:not-allowed}
+.breakdown-btn.sent{background:var(--green);cursor:default}
+.back-btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface2);color:var(--muted);border:1px solid var(--rule);padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .15s}
+.back-btn:hover{background:var(--surface);border-color:var(--border-s)}
+.rep-dash-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.5rem}
+.rep-stat-card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.03)}
+.rep-stat-val{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;line-height:1}
+.rep-stat-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;font-family:'DM Mono',monospace}
+.rep-dash-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--teal);margin:1.5rem 0 .75rem;font-family:'DM Mono',monospace;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.overdue-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.overdue-table th{background:var(--surface2);padding:10px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);font-family:'DM Mono',monospace;text-align:left;font-weight:600;border-bottom:1px solid var(--rule)}
+.overdue-table td{padding:10px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top}
+.overdue-table tr:last-child td{border-bottom:none}
+.overdue-table tr:hover td{background:rgba(26,92,92,0.02)}
+.sev-pill{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;white-space:nowrap}
+.sev-pill.critical{background:var(--red-bg);color:var(--red)}
+.sev-pill.warning{background:var(--amber-bg);color:var(--amber)}
+.sev-pill.watch{background:var(--green-bg);color:var(--green)}
+
 @media(max-width:768px){
   .layout{grid-template-columns:1fr}
   .sidebar{display:none}
@@ -263,6 +290,7 @@ select:focus{outline:none;border-color:var(--teal)}
       <div class="main" id="all-list"></div>
     </div>
     <div id="view-reps" class="view"><div class="main"><div class="rep-grid" id="rep-grid"></div></div></div>
+    <div id="view-rep" class="view"><div class="main" id="rep-dashboard"></div></div>
     <div id="view-summary" class="view"><div class="main" id="sum-content"></div></div>
     <div id="view-upload" class="view">
       <div class="upload-section" id="upload-zone">
@@ -553,7 +581,7 @@ function renderReps() {
   const sorted = Object.entries(REPS).sort((a, b) => b[1].critical - a[1].critical || b[1].total - a[1].total);
   document.getElementById('rep-grid').innerHTML = sorted.map(([name, d], i) => {
     const col = d.critical >= 2 ? 'var(--red)' : d.critical === 1 ? 'var(--amber)' : 'var(--green)';
-    return `<div class="rep-card">
+    return `<div class="rep-card" style="cursor:pointer" onclick="openRepDashboard('${name.replace(/'/g,"\\'")}')">
       <div class="rep-hdr">
         <div class="rep-av">${initials(name)}</div>
         <div class="rep-nw"><div class="rep-name">${name}</div><div class="rep-sub">${d.email} · ${d.total} consumers</div></div>
@@ -609,11 +637,154 @@ function renderSummary() {
 
 function switchView(v) {
   const views = ['critical','all','reps','summary','upload'];
-  document.querySelectorAll('.nav').forEach((el, i) => {
+  document.querySelectorAll('.sb-section:first-child .nav').forEach((el, i) => {
     if (i < views.length) el.classList.toggle('active', views[i] === v);
   });
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById(`view-${v}`).classList.add('active');
+  const target = document.getElementById(`view-${v}`);
+  if (target) target.classList.add('active');
+}
+
+/* ── Individual Rep Dashboard ──────────────────────────────── */
+function openRepDashboard(repName) {
+  const d = REPS[repName];
+  if (!d) return;
+  const consumers = DATA.filter(r => r.owner === repName);
+  const crits = consumers.filter(r => r.severity === 'critical');
+  const warns = consumers.filter(r => r.severity === 'warning');
+  const noHCA = consumers.filter(r => !r.verbal_hca);
+  const overdue = consumers.filter(r => r.closing_overdue);
+
+  // Build the dashboard HTML
+  const html = `
+    <div class="rep-dash-header">
+      <button class="back-btn" onclick="switchView('reps')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <div class="rep-dash-avatar">${initials(repName)}</div>
+      <div class="rep-dash-info">
+        <h2>${repName}</h2>
+        <div class="rep-email">${d.email} · ${consumers.length} consumers</div>
+      </div>
+      <div class="rep-dash-actions">
+        <button class="breakdown-btn" id="breakdown-btn-${repName.replace(/[^a-zA-Z]/g,'')}" onclick="sendBreakdownEmail('${repName.replace(/'/g,"\\'")}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Email full breakdown to ${repName.split(' ')[0]}
+        </button>
+      </div>
+    </div>
+
+    <div class="rep-dash-stats">
+      <div class="rep-stat-card">
+        <div class="rep-stat-val" style="color:var(--red)">${crits.length}</div>
+        <div class="rep-stat-lbl">Critical</div>
+      </div>
+      <div class="rep-stat-card">
+        <div class="rep-stat-val" style="color:var(--amber)">${warns.length}</div>
+        <div class="rep-stat-lbl">Warning</div>
+      </div>
+      <div class="rep-stat-card">
+        <div class="rep-stat-val" style="color:var(--red)">${noHCA.length}</div>
+        <div class="rep-stat-lbl">No HCA</div>
+      </div>
+      <div class="rep-stat-card">
+        <div class="rep-stat-val" style="color:var(--red)">${overdue.length}</div>
+        <div class="rep-stat-lbl">Overdue</div>
+      </div>
+      <div class="rep-stat-card">
+        <div class="rep-stat-val">${consumers.length}</div>
+        <div class="rep-stat-lbl">Total</div>
+      </div>
+    </div>
+
+    ${crits.length ? `
+    <div class="rep-dash-section-title">Critical — Immediate action required (${crits.length})</div>
+    ${buildOverdueTable(crits)}
+    ` : ''}
+
+    ${warns.length ? `
+    <div class="rep-dash-section-title">Warning — Follow up this week (${warns.length})</div>
+    ${buildOverdueTable(warns)}
+    ` : ''}
+
+    ${consumers.filter(r => r.severity === 'watch').length ? `
+    <div class="rep-dash-section-title">Watch (${consumers.filter(r => r.severity === 'watch').length})</div>
+    ${buildOverdueTable(consumers.filter(r => r.severity === 'watch'))}
+    ` : ''}
+  `;
+
+  document.getElementById('rep-dashboard').innerHTML = html;
+  // Deactivate all sidebar navs and show rep view
+  document.querySelectorAll('.nav').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-rep').classList.add('active');
+}
+
+function buildOverdueTable(consumers) {
+  return `<table class="overdue-table">
+    <thead>
+      <tr>
+        <th>Consumer</th>
+        <th>Status</th>
+        <th>HCP</th>
+        <th>CP Stage</th>
+        <th>Verbal HCA</th>
+        <th>Inactive</th>
+        <th>Overdue</th>
+        <th>Issues</th>
+        <th>Zoho</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${consumers.map(c => `<tr>
+        <td style="font-weight:500;color:var(--text)">${c.name}</td>
+        <td><span class="sev-pill ${c.severity}">${c.severity === 'critical' ? 'CRITICAL' : c.severity === 'warning' ? 'WARNING' : 'WATCH'}</span></td>
+        <td>${c.hcp || '—'}</td>
+        <td>${c.cp_stage || '—'}</td>
+        <td style="color:${c.verbal_hca ? 'var(--green)' : 'var(--red)'}; font-weight:500">${c.verbal_hca ? 'Yes' : 'No'}</td>
+        <td style="color:${(c.days_inactive||0) > 14 ? 'var(--red)' : 'var(--muted)'};font-weight:${(c.days_inactive||0) > 14 ? '600' : '400'}">${c.days_inactive || 0}d</td>
+        <td style="color:${c.closing_overdue ? 'var(--red)' : 'var(--muted)'};font-weight:${c.closing_overdue ? '600' : '400'}">${c.closing_overdue ? c.closing_overdue + 'd' : '—'}</td>
+        <td style="font-size:11px">${c.gaps.map(g => `<span class="gap-tag ${g.includes('HCA') ? 'danger' : 'warn'}" style="margin:1px 2px">${g}</span>`).join('')}</td>
+        <td><a href="${ZOHO_BASE}/${c.id}" target="_blank" rel="noopener" class="zoho-link">Open</a></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function sendBreakdownEmail(repName) {
+  const d = REPS[repName];
+  if (!d) return;
+  if (!WORKER_URL) { showToast('Configure Worker URL first — click Setup', 'error'); return; }
+
+  const consumers = DATA.filter(r => r.owner === repName);
+  const btnId = 'breakdown-btn-' + repName.replace(/[^a-zA-Z]/g, '');
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Sending...'; }
+
+  try {
+    const resp = await fetch(`${WORKER_URL}/email-breakdown`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: d.email,
+        rep_name: repName,
+        consumers: consumers,
+        zoho_base: ZOHO_BASE,
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      if (btn) { btn.className = 'breakdown-btn sent'; btn.innerHTML = 'Breakdown sent ✓'; }
+      showToast(`Full breakdown emailed to ${repName}`, 'success');
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Failed — retry'; }
+      showToast(`Email failed: ${data.error || 'Unknown error'}`, 'error');
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Failed — retry'; }
+    showToast(`Error: ${e.message}`, 'error');
+  }
 }
 
 /* ── CSV Upload / Import ────────────────────────────────────── */
@@ -816,7 +987,7 @@ Object.keys(REPS).sort().forEach(name => {
   const el = document.createElement('div');
   el.className = 'nav';
   el.innerHTML = `${name.split(' ')[0]} <span class="nc ${d.critical>=2?'red':d.critical===1?'amber':''}">${d.total}</span>`;
-  el.onclick = () => { document.getElementById('f-rep').value = name; switchView('all'); renderAll(); };
+  el.onclick = () => openRepDashboard(name);
   repNav.appendChild(el);
 });
 

@@ -149,6 +149,140 @@ export default {
       }
     }
 
-    return json({ error: `Unknown route: ${path}. Use /nudge or /email` }, 404);
+    // ── /email-breakdown — send full overdue breakdown email per rep ───
+    if (path === '/email-breakdown') {
+      if (!env.RESEND_API_KEY) return json({ error: 'RESEND_API_KEY not configured' }, 500);
+      if (!env.FROM_EMAIL)     return json({ error: 'FROM_EMAIL not configured' }, 500);
+
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+
+      const { to, rep_name, consumers, zoho_base } = body;
+      if (!to || !rep_name || !consumers || !consumers.length) return json({ error: 'Missing required fields: to, rep_name, consumers' }, 400);
+
+      const actualTo = env.TEST_EMAIL || to;
+
+      const criticals = consumers.filter(c => c.severity === 'critical');
+      const warnings = consumers.filter(c => c.severity === 'warning');
+      const noHCA = consumers.filter(c => !c.verbal_hca);
+      const overdue = consumers.filter(c => c.closing_overdue);
+
+      const consumerRows = consumers.map(c => {
+        const sevColor = c.severity === 'critical' ? '#ef4444' : c.severity === 'warning' ? '#c8953a' : '#6b7280';
+        const sevLabel = c.severity === 'critical' ? 'CRITICAL' : c.severity === 'warning' ? 'WARNING' : 'WATCH';
+        const zohoUrl = zoho_base ? `${zoho_base}/${c.id}` : '';
+        const gapText = (c.gaps || []).join(' · ');
+        return `
+          <tr style="border-bottom:1px solid #e5e7eb">
+            <td style="padding:12px 8px;font-size:13px;color:#111827;font-weight:500;vertical-align:top">
+              ${c.name}
+              ${zohoUrl ? `<br><a href="${zohoUrl}" style="font-size:11px;color:#1a5c5c;text-decoration:none">Open in Zoho →</a>` : ''}
+            </td>
+            <td style="padding:12px 8px;font-size:11px;vertical-align:top">
+              <span style="background:${sevColor}15;color:${sevColor};padding:2px 8px;border-radius:10px;font-weight:500">${sevLabel}</span>
+            </td>
+            <td style="padding:12px 8px;font-size:12px;color:#6b7280;vertical-align:top">${c.hcp || '—'}</td>
+            <td style="padding:12px 8px;font-size:12px;color:#6b7280;vertical-align:top">${c.cp_stage || '—'}</td>
+            <td style="padding:12px 8px;font-size:12px;color:${(c.days_inactive||0) > 14 ? '#ef4444' : '#6b7280'};vertical-align:top;font-weight:${(c.days_inactive||0) > 14 ? '600' : '400'}">${c.days_inactive || 0}d</td>
+            <td style="padding:12px 8px;font-size:12px;color:${c.closing_overdue ? '#ef4444' : '#6b7280'};vertical-align:top;font-weight:${c.closing_overdue ? '600' : '400'}">${c.closing_overdue ? c.closing_overdue + 'd' : '—'}</td>
+            <td style="padding:12px 8px;font-size:11px;color:#6b7280;vertical-align:top">${gapText || '—'}</td>
+          </tr>`;
+      }).join('');
+
+      const subject = `${rep_name} — Overdue consumer breakdown (${criticals.length} critical, ${warnings.length} warning)`;
+
+      const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f5ee;font-family:'Segoe UI',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f5ee;padding:32px 0">
+    <tr><td align="center">
+      <table width="720" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+        <tr><td style="background:#1a5c5c;padding:20px 32px">
+          <span style="color:#ffffff;font-size:16px;font-weight:600;letter-spacing:0.04em;font-family:Georgia,serif">Trilogy <span style="color:#c8953a">Care</span></span>
+          <span style="color:rgba(255,255,255,0.6);font-size:12px;margin-left:16px;font-family:monospace"> · Overdue Consumer Breakdown</span>
+        </td></tr>
+        <tr><td style="padding:32px">
+          <h2 style="margin:0 0 4px;font-size:20px;color:#0f0f0f">Hi ${rep_name.split(' ')[0]},</h2>
+          <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6">
+            Here is your complete overdue consumer breakdown as of today. Please prioritise the critical items and action the verbal HCA calls.
+          </p>
+
+          <!-- Summary stats -->
+          <table style="width:100%;margin-bottom:24px;border-collapse:collapse">
+            <tr>
+              <td style="background:#fef2f2;border-radius:8px;padding:14px;text-align:center;width:25%">
+                <div style="font-size:24px;font-weight:700;color:#c0392b;font-family:monospace">${criticals.length}</div>
+                <div style="font-size:10px;color:#c0392b;text-transform:uppercase;letter-spacing:1px;margin-top:2px">Critical</div>
+              </td>
+              <td style="width:8px"></td>
+              <td style="background:#fef8ee;border-radius:8px;padding:14px;text-align:center;width:25%">
+                <div style="font-size:24px;font-weight:700;color:#c8953a;font-family:monospace">${warnings.length}</div>
+                <div style="font-size:10px;color:#c8953a;text-transform:uppercase;letter-spacing:1px;margin-top:2px">Warning</div>
+              </td>
+              <td style="width:8px"></td>
+              <td style="background:#f0faf4;border-radius:8px;padding:14px;text-align:center;width:25%">
+                <div style="font-size:24px;font-weight:700;color:#1d6b3e;font-family:monospace">${noHCA.length}</div>
+                <div style="font-size:10px;color:#1d6b3e;text-transform:uppercase;letter-spacing:1px;margin-top:2px">No HCA</div>
+              </td>
+              <td style="width:8px"></td>
+              <td style="background:#eef6f6;border-radius:8px;padding:14px;text-align:center;width:25%">
+                <div style="font-size:24px;font-weight:700;color:#1a5c5c;font-family:monospace">${consumers.length}</div>
+                <div style="font-size:10px;color:#1a5c5c;text-transform:uppercase;letter-spacing:1px;margin-top:2px">Total</div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Consumer table -->
+          <table style="width:100%;border-collapse:collapse;font-family:'Segoe UI',Arial,sans-serif">
+            <tr style="background:#f9f5ee;border-bottom:2px solid #d4c9b0">
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">Consumer</th>
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">Status</th>
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">HCP</th>
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">CP Stage</th>
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">Inactive</th>
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">Overdue</th>
+              <th style="padding:8px;font-size:11px;color:#1a5c5c;text-transform:uppercase;letter-spacing:0.5px;text-align:left;font-weight:600">Issues</th>
+            </tr>
+            ${consumerRows}
+          </table>
+
+          <div style="background:#fef3c7;border-radius:8px;padding:14px 16px;margin-top:24px;border-left:4px solid #c8953a">
+            <p style="margin:0;font-size:13px;color:#92400e;font-weight:500">Priority: Focus on the ${criticals.length} critical consumer${criticals.length !== 1 ? 's' : ''} first — make verbal HCA calls today and log in Zoho.</p>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0">
+          <p style="margin:0;font-size:12px;color:#9ca3af">This breakdown was sent by the Trilogy Care Onboarding Stall Dashboard.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+      try {
+        const emailResp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: env.FROM_EMAIL,
+            to: [actualTo],
+            subject,
+            html,
+          }),
+        });
+        const emailData = await emailResp.json();
+        if (!emailResp.ok) return json({ error: emailData.message || 'Email failed', detail: emailData }, emailResp.status);
+        return json({ success: true, id: emailData.id, to: actualTo });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
+    return json({ error: `Unknown route: ${path}. Use /nudge, /email, or /email-breakdown` }, 404);
   }
 };
