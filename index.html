@@ -167,6 +167,32 @@ select:focus{outline:none;border-color:var(--teal)}
 .modal-save{font-size:12px;font-family:'DM Mono',monospace;background:var(--teal);color:#fff;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;margin-top:.5rem}
 .modal-close{font-size:12px;color:var(--dim);cursor:pointer;margin-top:.5rem;display:inline-block;margin-left:12px}
 
+/* CSV UPLOAD AREA */
+.upload-section{
+  background:var(--surface);
+  border:2px dashed var(--rule);
+  border-radius:12px;
+  padding:2.5rem 2rem;
+  text-align:center;
+  margin:1.25rem 2rem;
+  transition:all .2s;
+}
+.upload-section.dragover{
+  border-color:var(--teal);
+  background:rgba(26,92,92,0.04);
+}
+.upload-icon{font-size:36px;margin-bottom:12px;color:var(--teal);opacity:0.6}
+.upload-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:6px;color:var(--ink)}
+.upload-desc{font-size:12px;color:var(--dim);margin-bottom:16px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.6}
+.upload-btn{
+  font-size:12px;font-family:'DM Mono',monospace;
+  background:var(--teal);color:#fff;
+  border:none;padding:8px 24px;border-radius:6px;
+  cursor:pointer;transition:all .15s;
+}
+.upload-btn:hover{background:var(--teal-light)}
+.upload-meta{font-size:10px;color:var(--dim);margin-top:12px;font-family:'DM Mono',monospace}
+.upload-status{margin-top:12px;font-size:12px;color:var(--green);display:none}
 
 /* FOOTER */
 .footer{border-top:1px solid var(--rule);padding:.85rem 2rem;display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;background:var(--surface)}
@@ -244,6 +270,7 @@ select:focus{outline:none;border-color:var(--teal)}
       <div class="nav" onclick="switchView('all')">All consumers <span class="nc">0</span></div>
       <div class="nav" onclick="switchView('reps')">Rep nudges <span class="nc">0</span></div>
       <div class="nav" onclick="switchView('summary')">Summary</div>
+      <div class="nav" onclick="switchView('upload')">Import data</div>
     </div>
     <div class="sb-section">
       <div class="sb-label">By rep</div>
@@ -265,6 +292,32 @@ select:focus{outline:none;border-color:var(--teal)}
     <div id="view-reps" class="view"><div class="main"><div class="rep-grid" id="rep-grid"></div></div></div>
     <div id="view-rep" class="view"><div class="main" id="rep-dashboard"></div></div>
     <div id="view-summary" class="view"><div class="main" id="sum-content"></div></div>
+    <div id="view-upload" class="view">
+      <div class="upload-section" id="upload-zone">
+        <div class="upload-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-title">Import Consumer Export</div>
+        <div class="upload-desc">
+          Drag and drop your Zoho CRM consumer export CSV here, or click to browse.
+          The dashboard will regenerate with the new data automatically.
+        </div>
+        <button class="upload-btn" onclick="document.getElementById('csv-file').click()">Choose CSV file</button>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSVUpload(this.files[0])">
+        <div class="upload-meta">Accepted: .csv files from Zoho CRM consumer export</div>
+        <div class="upload-status" id="upload-status"></div>
+      </div>
+      <div class="main" id="upload-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <div>
+            <div class="sb-label" style="padding:0;margin:0">Import preview</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px" id="import-summary"></div>
+          </div>
+          <button class="upload-btn" onclick="applyImportedData()">Apply to dashboard</button>
+        </div>
+        <div id="import-cards"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -583,7 +636,7 @@ function renderSummary() {
 }
 
 function switchView(v) {
-  const views = ['critical','all','reps','summary'];
+  const views = ['critical','all','reps','summary','upload'];
   document.querySelectorAll('.sb-section:first-child .nav').forEach((el, i) => {
     if (i < views.length) el.classList.toggle('active', views[i] === v);
   });
@@ -734,6 +787,214 @@ async function sendBreakdownEmail(repName) {
   }
 }
 
+/* ── CSV Upload / Import ────────────────────────────────────── */
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) handleCSVUpload(file);
+  else showToast('Please drop a .csv file', 'error');
+});
+
+function makeEmail(name) {
+  const parts = name.toLowerCase().split(/\s+/);
+  return parts.length >= 2 ? `${parts[0]}.${parts[parts.length-1]}@trilogycare.com.au` : `${parts[0]}@trilogycare.com.au`;
+}
+
+function daysSince(dtStr) {
+  if (!dtStr || !dtStr.trim()) return null;
+  try {
+    const d = new Date(dtStr.trim().slice(0,10));
+    if (isNaN(d)) return null;
+    return Math.floor((new Date() - d) / 86400000);
+  } catch { return null; }
+}
+
+let importedData = null;
+let importedReps = null;
+
+function handleCSVUpload(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      const csvRows = parseFullCSV(text);
+      if (csvRows.length < 2) { showToast('CSV appears empty', 'error'); return; }
+
+      const headers = csvRows[0];
+      const records = [];
+
+      for (let i = 1; i < csvRows.length; i++) {
+        const cols = csvRows[i];
+        if (cols.length < 3) continue;
+        const row = {};
+        headers.forEach((h, j) => row[h.trim()] = (cols[j] || '').trim());
+
+        const closing = row['Closing Date'] || '';
+        let closingOverdue = null;
+        if (closing) {
+          try {
+            const cd = new Date(closing.slice(0,10));
+            if (!isNaN(cd) && cd < new Date()) closingOverdue = Math.floor((new Date() - cd) / 86400000);
+          } catch {}
+        }
+
+        const verbalHca = (row['Verbal HCA'] || '').toLowerCase() === 'true';
+        const daysMod = daysSince(row['Modified Time'] || '');
+        const cpStage = row['CP Stage'] || '';
+        const numericId = (row['Record Id'] || '').replace('zcrm_', '');
+        const owner = row['Consumer Owner'] || '';
+        if (!owner || !row['Consumer Name']) continue; // skip invalid rows
+        const ownerEmail = REP_EMAILS[owner] || makeEmail(owner);
+
+        const gaps = [];
+        if (!verbalHca) gaps.push('No verbal HCA');
+        if (daysMod && daysMod > 7) gaps.push(`${daysMod}d no activity`);
+        if (closingOverdue && closingOverdue > 0) gaps.push(`Closing ${closingOverdue}d overdue`);
+        if (['0. New', '2. CP Drafted'].includes(cpStage)) gaps.push(`CP stuck: ${cpStage}`);
+
+        const severity = (!verbalHca && daysMod && daysMod > 14) ? 'critical'
+          : gaps.length >= 2 ? 'warning' : 'watch';
+
+        records.push({
+          id: numericId, name: row['Consumer Name'] || '', owner, owner_email: ownerEmail,
+          hcp: row['HCP Level'] || '', financial: row['Financial Status'] || '',
+          verbal_hca: verbalHca, cp_stage: cpStage, days_inactive: daysMod,
+          closing_overdue: closingOverdue, committed: row['Committed Date'] || '',
+          funding: row['Funding Status'] || '', gaps, severity
+        });
+      }
+
+      records.sort((a, b) => {
+        const order = { critical: 0, warning: 1, watch: 2 };
+        return (order[a.severity] - order[b.severity]) || -((a.days_inactive||0) - (b.days_inactive||0));
+      });
+
+      const repMap = {};
+      records.forEach(r => {
+        if (!repMap[r.owner]) repMap[r.owner] = { total:0, critical:0, warning:0, watch:0, no_verbal:0, overdue:0, email:r.owner_email };
+        repMap[r.owner].total++;
+        repMap[r.owner][r.severity]++;
+        if (!r.verbal_hca) repMap[r.owner].no_verbal++;
+        if (r.closing_overdue) repMap[r.owner].overdue++;
+      });
+
+      importedData = records;
+      importedReps = repMap;
+
+      const critCount = records.filter(r => r.severity === 'critical').length;
+      const warnCount = records.filter(r => r.severity === 'warning').length;
+
+      const status = document.getElementById('upload-status');
+      status.style.display = 'block';
+      status.textContent = `Parsed ${records.length} consumers (${critCount} critical, ${warnCount} warning)`;
+
+      document.getElementById('import-summary').textContent =
+        `${records.length} consumers · ${critCount} critical · ${warnCount} warning · ${Object.keys(repMap).length} reps`;
+      document.getElementById('upload-preview').style.display = 'block';
+      document.getElementById('import-cards').innerHTML = records.slice(0, 5).map((r, i) =>
+        `<div class="card ${r.severity}" style="opacity:0.85">
+          <div class="card-top"><div class="card-name">${r.name}</div>
+          <span class="badge ${r.severity}">${r.severity.toUpperCase()}</span></div>
+          <div class="card-meta"><span>Owner</span> ${r.owner} &nbsp;<span>HCP</span> ${r.hcp}</div>
+          <div class="gaps">${r.gaps.map(gapTag).join('')}</div>
+        </div>`
+      ).join('') + (records.length > 5 ? `<div style="text-align:center;color:var(--dim);font-size:12px;padding:1rem">... and ${records.length - 5} more</div>` : '');
+
+      showToast(`CSV parsed: ${records.length} consumers found`, 'success');
+    } catch(err) {
+      showToast(`CSV parse error: ${err.message}`, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* Full CSV parser that handles multiline quoted fields (e.g. Description with newlines) */
+function parseFullCSV(text) {
+  const rows = [];
+  let current = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else field += ch;
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { current.push(field); field = ''; }
+      else if (ch === '\r' && text[i+1] === '\n') {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = []; i++; // skip \n
+      }
+      else if (ch === '\n') {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = [];
+      }
+      else { field += ch; }
+    }
+  }
+  // Last field/row
+  current.push(field);
+  if (current.length > 1 || current[0] !== '') rows.push(current);
+  return rows;
+}
+
+function applyImportedData() {
+  if (!importedData || !importedReps) { showToast('No data to apply', 'error'); return; }
+  DATA = importedData;
+  REPS = importedReps;
+
+  // Update metrics
+  const critCount = DATA.filter(r => r.severity === 'critical').length;
+  const warnCount = DATA.filter(r => r.severity === 'warning').length;
+  const noHCA = DATA.filter(r => !r.verbal_hca).length;
+  const overdue = DATA.filter(r => r.closing_overdue).length;
+  const metricVals = document.querySelectorAll('.metric-val');
+  if (metricVals[0]) metricVals[0].textContent = critCount;
+  if (metricVals[1]) metricVals[1].textContent = warnCount;
+  if (metricVals[2]) metricVals[2].textContent = noHCA;
+  if (metricVals[3]) metricVals[3].textContent = overdue;
+
+  // Update date chip
+  const today = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.querySelector('.date-chip').textContent = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()} · ${DATA.length} consumers`;
+
+  // Update sidebar counts
+  const navEls = document.querySelectorAll('.sb-section:first-child .nav .nc');
+  if (navEls[0]) navEls[0].textContent = critCount;
+  if (navEls[1]) navEls[1].textContent = DATA.length;
+  if (navEls[2]) navEls[2].textContent = Object.keys(REPS).length;
+
+  // Rebuild rep nav + filter
+  document.getElementById('rep-nav').innerHTML = '';
+  const fRep = document.getElementById('f-rep');
+  fRep.innerHTML = '<option value="">All reps</option>';
+  Object.keys(REPS).sort().forEach(name => {
+    const d = REPS[name];
+    const el = document.createElement('div');
+    el.className = 'nav';
+    el.innerHTML = `${name.split(' ')[0]} <span class="nc ${d.critical>=2?'red':d.critical===1?'amber':''}">${d.total}</span>`;
+    el.onclick = () => openRepDashboard(name);
+    document.getElementById('rep-nav').appendChild(el);
+    const o = document.createElement('option'); o.value = name; o.textContent = name; fRep.appendChild(o);
+  });
+
+  renderCritical();
+  renderAll();
+  renderReps();
+  renderSummary();
+  switchView('critical');
+  showToast(`Dashboard updated with ${DATA.length} consumers`, 'success');
+}
+
 // Sidebar rep nav
 const repNav = document.getElementById('rep-nav');
 Object.keys(REPS).sort().forEach(name => {
@@ -751,10 +1012,15 @@ Object.keys(REPS).sort().forEach(name => {
   const o = document.createElement('option'); o.value = name; o.textContent = name; fRep.appendChild(o);
 });
 
-renderCritical();
-renderAll();
-renderReps();
-renderSummary();
+// If no data, show upload view by default
+if (DATA.length === 0) {
+  switchView('upload');
+} else {
+  renderCritical();
+  renderAll();
+  renderReps();
+  renderSummary();
+}
 </script>
 </body>
 </html>
