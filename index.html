@@ -821,15 +821,15 @@ function handleCSVUpload(file) {
   reader.onload = function(e) {
     try {
       const text = e.target.result;
-      const lines = text.split(/\r?\n/);
-      if (lines.length < 2) { showToast('CSV appears empty', 'error'); return; }
+      const csvRows = parseFullCSV(text);
+      if (csvRows.length < 2) { showToast('CSV appears empty', 'error'); return; }
 
-      const headers = parseCSVLine(lines[0]);
+      const headers = csvRows[0];
       const records = [];
 
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const cols = parseCSVLine(lines[i]);
+      for (let i = 1; i < csvRows.length; i++) {
+        const cols = csvRows[i];
+        if (cols.length < 3) continue;
         const row = {};
         headers.forEach((h, j) => row[h.trim()] = (cols[j] || '').trim());
 
@@ -847,6 +847,7 @@ function handleCSVUpload(file) {
         const cpStage = row['CP Stage'] || '';
         const numericId = (row['Record Id'] || '').replace('zcrm_', '');
         const owner = row['Consumer Owner'] || '';
+        if (!owner || !row['Consumer Name']) continue; // skip invalid rows
         const ownerEmail = REP_EMAILS[owner] || makeEmail(owner);
 
         const gaps = [];
@@ -911,24 +912,38 @@ function handleCSVUpload(file) {
   reader.readAsText(file);
 }
 
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
+/* Full CSV parser that handles multiline quoted fields (e.g. Description with newlines) */
+function parseFullCSV(text) {
+  const rows = [];
+  let current = [];
+  let field = '';
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
     if (inQuotes) {
-      if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+      if (ch === '"' && text[i+1] === '"') { field += '"'; i++; }
       else if (ch === '"') inQuotes = false;
-      else current += ch;
+      else field += ch;
     } else {
-      if (ch === '"') inQuotes = true;
-      else if (ch === ',') { result.push(current); current = ''; }
-      else current += ch;
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { current.push(field); field = ''; }
+      else if (ch === '\r' && text[i+1] === '\n') {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = []; i++; // skip \n
+      }
+      else if (ch === '\n') {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = [];
+      }
+      else { field += ch; }
     }
   }
-  result.push(current);
-  return result;
+  // Last field/row
+  current.push(field);
+  if (current.length > 1 || current[0] !== '') rows.push(current);
+  return rows;
 }
 
 function applyImportedData() {
