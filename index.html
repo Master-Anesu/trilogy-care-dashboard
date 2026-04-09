@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trilogy Care — Onboarding Stall Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f9f5ee;
+  --surface:#ffffff;
+  --surface2:#f0ebe0;
+  --border:rgba(0,0,0,0.08);
+  --border-s:rgba(0,0,0,0.14);
+  --text:#0f0f0f;
+  --muted:#5a5a5a;
+  --dim:#888;
+  --red:#c0392b;
+  --red-bg:rgba(192,57,43,0.1);
+  --amber:#c8953a;
+  --amber-bg:rgba(200,149,58,0.12);
+  --green:#1d6b3e;
+  --green-bg:rgba(29,107,62,0.1);
+  --blue:#1a5c5c;
+  --blue-bg:rgba(26,92,92,0.1);
+  --accent:#1a5c5c;
+  --accent-bg:rgba(26,92,92,0.1);
+  --gold:#c8953a;
+  --gold-light:#e8b96a;
+  --teal:#1a5c5c;
+  --teal-light:#2a8080;
+  --cream:#f9f5ee;
+  --ink:#0f0f0f;
+  --rule:#d4c9b0;
+  --card:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* HEADER */
+.hdr{
+  background:var(--teal);
+  color:var(--cream);
+  padding:1.1rem 2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(26,92,92,0.18);
+}
+.hdr::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:280px;height:280px;
+  border:2px solid rgba(200,149,58,0.2);border-radius:50%;
+  pointer-events:none;
+}
+.logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;letter-spacing:.04em;color:#fff}
+.logo span{color:var(--gold)}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.date-chip{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.12);padding:3px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.15)}
+.setup-btn{font-size:11px;font-family:'DM Mono',monospace;background:rgba(200,149,58,0.2);color:var(--gold-light);border:1px solid rgba(200,149,58,0.4);padding:4px 12px;border-radius:4px;cursor:pointer;transition:all .15s}
+.setup-btn:hover{background:rgba(200,149,58,0.35)}
+
+/* API Banner */
+.api-banner{background:rgba(26,92,92,0.06);border-bottom:1px solid rgba(26,92,92,0.15);padding:.75rem 2rem;display:flex;align-items:center;gap:12px}
+.api-banner.hidden{display:none}
+.api-input{font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);border:1px solid rgba(26,92,92,0.3);color:var(--text);padding:5px 10px;border-radius:4px;width:340px}
+.api-input:focus{outline:none;border-color:var(--teal)}
+.api-save{font-size:11px;font-family:'DM Mono',monospace;background:var(--teal);color:#fff;border:none;padding:5px 14px;border-radius:4px;cursor:pointer}
+.api-hint{font-size:11px;color:var(--dim);flex:1}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--rule);background:var(--surface)}
+.metric{padding:1.25rem 2rem;border-right:1px solid var(--rule)}.metric:last-child{border-right:none}
+.metric-val{font-size:28px;font-weight:600;font-family:'DM Mono',monospace;line-height:1;margin-bottom:3px}
+.metric-lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace}
+.red{color:var(--red)}.amber{color:var(--amber)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:210px 1fr}
+.sidebar{border-right:1px solid var(--rule);padding:1.25rem 0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto;background:var(--surface)}
+.sb-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);padding:0 1.25rem;margin-bottom:.4rem;font-family:'DM Mono',monospace;font-weight:500}
+.sb-section{margin-bottom:1.25rem}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:.45rem 1.25rem;cursor:pointer;font-size:13px;color:var(--muted);border-left:2px solid transparent;transition:all .15s}
+.nav:hover{color:var(--text);background:var(--surface2)}.nav.active{color:var(--text);background:var(--surface2);border-left-color:var(--teal)}
+.nc{font-family:'DM Mono',monospace;font-size:11px;background:var(--surface2);padding:1px 7px;border-radius:10px}
+.nc.red{background:var(--red-bg);color:var(--red)}.nc.amber{background:var(--amber-bg);color:var(--amber)}
+
+/* FILTER BAR */
+.filter-bar{padding:.85rem 2rem;border-bottom:1px solid var(--rule);display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--surface)}
+.filter-bar label{font-size:11px;color:var(--dim);font-family:'DM Mono',monospace}
+select{background:var(--surface2);border:1px solid var(--border-s);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer}
+select:focus{outline:none;border-color:var(--teal)}
+
+/* MAIN */
+.main{padding:1.25rem 2rem}.view{display:none}.view.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:10px;transition:border-color .15s;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.card:hover{border-color:var(--border-s)}.card.critical{border-left:3px solid var(--red)}.card.warning{border-left:3px solid var(--amber)}
+.card-top{display:flex;align-items:center;gap:8px;margin-bottom:.6rem;flex-wrap:wrap}
+.card-name{font-size:14px;font-weight:500;flex:1;min-width:160px}
+.card-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.zoho-link{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);text-decoration:none;background:var(--accent-bg);padding:3px 9px;border-radius:4px;border:1px solid rgba(26,92,92,0.25);white-space:nowrap;transition:all .15s}
+.zoho-link:hover{background:rgba(26,92,92,0.18);border-color:rgba(26,92,92,0.5)}
+.zoho-link svg,.email-btn svg{width:9px;height:9px;flex-shrink:0}
+.email-btn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:var(--green);background:var(--green-bg);padding:3px 9px;border-radius:4px;border:1px solid rgba(29,107,62,0.25);white-space:nowrap;cursor:pointer;transition:all .15s}
+.email-btn:hover{background:rgba(29,107,62,0.18);border-color:rgba(29,107,62,0.5)}
+.email-btn:disabled{opacity:.5;cursor:not-allowed}
+.email-btn.sent{color:var(--dim);background:var(--surface2);border-color:var(--border);cursor:default}
+
+/* BADGES */
+.badge{font-size:10px;font-weight:500;padding:2px 9px;border-radius:20px;white-space:nowrap;font-family:'DM Mono',monospace;flex-shrink:0}
+.badge.critical{background:var(--red-bg);color:var(--red)}.badge.warning{background:var(--amber-bg);color:var(--amber)}.badge.ok{background:var(--green-bg);color:var(--green)}
+
+/* CARD META */
+.card-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--muted);margin-bottom:.5rem;font-family:'DM Mono',monospace}
+.card-meta span{color:var(--dim)}
+.gaps{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.65rem}
+.gap-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace}
+.gap-tag.danger{background:var(--red-bg);color:var(--red)}.gap-tag.warn{background:var(--amber-bg);color:var(--amber)}
+
+/* NUDGE */
+.nudge-sec{border-top:1px solid var(--rule);padding-top:.65rem;margin-top:.65rem}
+.nudge-lbl{font-size:9px;font-family:'DM Mono',monospace;color:var(--teal);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;font-weight:500}
+.nudge-txt{font-size:12px;color:var(--muted);line-height:1.65;min-height:36px}
+.nudge-txt.loading{color:var(--dim);font-style:italic}
+.gen-btn{margin-top:6px;font-size:11px;font-family:'DM Mono',monospace;background:transparent;border:1px solid var(--border-s);color:var(--teal);padding:4px 12px;border-radius:4px;cursor:pointer}
+.gen-btn:hover{background:var(--accent-bg)}
+
+/* REP GRID */
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.rep-card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:1.1rem 1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.rep-hdr{display:flex;align-items:center;gap:10px;margin-bottom:.85rem}
+.rep-av{width:38px;height:38px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.rep-nw{flex:1}.rep-name{font-size:13px;font-weight:500}.rep-sub{font-size:10px;color:var(--dim);font-family:'DM Mono',monospace}
+.rep-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:.85rem}
+.rs{background:var(--surface2);border-radius:6px;padding:7px;text-align:center}
+.rs-val{font-size:17px;font-weight:600;font-family:'DM Mono',monospace}.rs-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.rep-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:.85rem}
+.rep-bar-fill{height:100%;border-radius:2px}
+
+/* SUMMARY */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.sum-card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:1.1rem 1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.sum-title{font-size:11px;font-weight:500;color:var(--teal);margin-bottom:.85rem;text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
+.finding{display:flex;gap:10px;margin-bottom:7px;font-size:12px;color:var(--muted)}
+.fdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border-s);border-radius:8px;padding:12px 18px;font-size:13px;color:var(--text);z-index:1000;transform:translateY(80px);opacity:0;transition:all .3s;max-width:340px;box-shadow:0 4px 16px rgba(0,0,0,0.1)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border-s);border-radius:12px;padding:1.5rem;width:500px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:.5rem;color:var(--teal)}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:.85rem;line-height:1.6}
+.modal-steps{font-size:12px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:1rem;margin-bottom:.85rem;font-family:'DM Mono',monospace;line-height:2}
+.modal-steps b{color:var(--text)}
+.modal-row{display:flex;align-items:center;gap:8px;margin-bottom:.6rem}
+.modal-label{font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;width:90px;flex-shrink:0}
+.modal-input{flex:1;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface2);border:1px solid var(--border-s);color:var(--text);padding:6px 10px;border-radius:6px}
+.modal-input:focus{outline:none;border-color:var(--teal)}
+.modal-save{font-size:12px;font-family:'DM Mono',monospace;background:var(--teal);color:#fff;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;margin-top:.5rem}
+.modal-close{font-size:12px;color:var(--dim);cursor:pointer;margin-top:.5rem;display:inline-block;margin-left:12px}
+
+/* CSV UPLOAD AREA */
+.upload-section{
+  background:var(--surface);
+  border:2px dashed var(--rule);
+  border-radius:12px;
+  padding:2.5rem 2rem;
+  text-align:center;
+  margin:1.25rem 2rem;
+  transition:all .2s;
+}
+.upload-section.dragover{
+  border-color:var(--teal);
+  background:rgba(26,92,92,0.04);
+}
+.upload-icon{font-size:36px;margin-bottom:12px;color:var(--teal);opacity:0.6}
+.upload-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:6px;color:var(--ink)}
+.upload-desc{font-size:12px;color:var(--dim);margin-bottom:16px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.6}
+.upload-btn{
+  font-size:12px;font-family:'DM Mono',monospace;
+  background:var(--teal);color:#fff;
+  border:none;padding:8px 24px;border-radius:6px;
+  cursor:pointer;transition:all .15s;
+}
+.upload-btn:hover{background:var(--teal-light)}
+.upload-meta{font-size:10px;color:var(--dim);margin-top:12px;font-family:'DM Mono',monospace}
+.upload-status{margin-top:12px;font-size:12px;color:var(--green);display:none}
+
+/* FOOTER */
+.footer{border-top:1px solid var(--rule);padding:.85rem 2rem;display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;background:var(--surface)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .sum-grid{grid-template-columns:1fr}
+  .hdr{padding:1rem}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div style="display:flex;align-items:center;gap:.85rem">
+    <div class="logo">Trilogy <span>Care</span></div>
+    <div style="width:1px;height:18px;background:rgba(255,255,255,0.2)"></div>
+    <span style="font-size:12px;color:rgba(255,255,255,0.7);font-family:'DM Mono',monospace">Onboarding Stall Dashboard</span>
+  </div>
+  <div class="hdr-right">
+    <div class="date-chip">9 Apr 2026 · 81 consumers</div>
+    <button class="setup-btn" onclick="toggleModal(true)">Setup</button>
+  </div>
+</header>
+
+<div class="api-banner" id="api-banner">
+  <span style="font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;white-space:nowrap">Worker URL:</span>
+  <input class="api-input" id="banner-url" placeholder="https://trilogy-care-nudge.YOUR.workers.dev" />
+  <button class="api-save" onclick="saveBannerUrl()">Save</button>
+  <span class="api-hint">Paste your deployed Cloudflare Worker URL to enable AI nudges and email sending.</span>
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-val red">14</div><div class="metric-lbl">Critical stalls</div></div>
+  <div class="metric"><div class="metric-val amber">65</div><div class="metric-lbl">Warning</div></div>
+  <div class="metric"><div class="metric-val red">79</div><div class="metric-lbl">No verbal HCA</div></div>
+  <div class="metric"><div class="metric-val red">81</div><div class="metric-lbl">Closing overdue</div></div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Views</div>
+      <div class="nav active" onclick="switchView('critical')">Critical stalls <span class="nc red">14</span></div>
+      <div class="nav" onclick="switchView('all')">All consumers <span class="nc">81</span></div>
+      <div class="nav" onclick="switchView('reps')">Rep nudges <span class="nc">13</span></div>
+      <div class="nav" onclick="switchView('summary')">Summary</div>
+      <div class="nav" onclick="switchView('upload')">Import data</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">By rep</div>
+      <div id="rep-nav"></div>
+    </div>
+  </aside>
+
+  <div style="overflow-y:auto;flex:1">
+    <div id="view-critical" class="view active"><div class="main" id="critical-list"></div></div>
+    <div id="view-all" class="view">
+      <div class="filter-bar">
+        <label>Rep</label><select id="f-rep" onchange="renderAll()"><option value="">All reps</option></select>
+        <label>Severity</label><select id="f-sev" onchange="renderAll()"><option value="">All</option><option value="critical">Critical</option><option value="warning">Warning</option></select>
+        <label>HCA</label><select id="f-hca" onchange="renderAll()"><option value="">All</option><option value="no">Not done</option><option value="yes">Done</option></select>
+        <label>CP Stage</label><select id="f-cp" onchange="renderAll()"><option value="">All stages</option><option>0. New</option><option>2. CP Drafted</option><option>3. CP Approved</option><option>4. CP Sent</option></select>
+      </div>
+      <div class="main" id="all-list"></div>
+    </div>
+    <div id="view-reps" class="view"><div class="main"><div class="rep-grid" id="rep-grid"></div></div></div>
+    <div id="view-summary" class="view"><div class="main" id="sum-content"></div></div>
+    <div id="view-upload" class="view">
+      <div class="upload-section" id="upload-zone">
+        <div class="upload-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-title">Import Consumer Export</div>
+        <div class="upload-desc">
+          Drag and drop your Zoho CRM consumer export CSV here, or click to browse.
+          The dashboard will regenerate with the new data automatically.
+        </div>
+        <button class="upload-btn" onclick="document.getElementById('csv-file').click()">Choose CSV file</button>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSVUpload(this.files[0])">
+        <div class="upload-meta">Accepted: .csv files from Zoho CRM consumer export</div>
+        <div class="upload-status" id="upload-status"></div>
+      </div>
+      <div class="main" id="upload-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <div>
+            <div class="sb-label" style="padding:0;margin:0">Import preview</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px" id="import-summary"></div>
+          </div>
+          <button class="upload-btn" onclick="applyImportedData()">Apply to dashboard</button>
+        </div>
+        <div id="import-cards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <span>Trilogy Care · Onboarding Stall Dashboard</span>
+  <span>Zoho org 4637899 · Powered by Cloudflare Workers + Resend</span>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Setup Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Configuration</h3>
+    <p>Deploy <code>worker.js</code> to Cloudflare Workers, then enter your Worker URL below. The worker handles both AI nudges (Anthropic) and email sending (Resend).</p>
+    <div class="modal-steps">
+      <b>1.</b> <code>npm install -g wrangler && npx wrangler login</code><br>
+      <b>2.</b> <code>npx wrangler deploy worker.js --name trilogy-care-nudge</code><br>
+      <b>3.</b> <code>npx wrangler secret put ANTHROPIC_API_KEY</code><br>
+      <b>4.</b> <code>npx wrangler secret put RESEND_API_KEY</code><br>
+      <b>5.</b> <code>npx wrangler secret put FROM_EMAIL</code>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Worker URL</span>
+      <input class="modal-input" id="modal-url" placeholder="https://trilogy-care-nudge.yourname.workers.dev">
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Manager CC</span>
+      <input class="modal-input" id="modal-cc" placeholder="manager@trilogycare.com.au (optional)">
+    </div>
+    <button class="modal-save" onclick="saveModal()">Save settings</button>
+    <span class="modal-close" onclick="toggleModal(false)">Cancel</span>
+  </div>
+</div>
+
+<script>
+const ZOHO_BASE = 'https://crm.zoho.com.au/crm/org4637899/tab/Deals';
+const DATA = [{"id": "4637899001341245481", "name": "Wadad Farah", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 52, "closing_overdue": 9, "committed": "2026-02-16", "funding": "FSO", "gaps": ["No verbal HCA", "52d no activity", "Closing 9d overdue"], "severity": "critical"}, {"id": "4637899001365990931", "name": "Anne ROLLINS", "owner": "Matthew Farrelly", "owner_email": "matthew.farrelly@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 24, "closing_overdue": 14, "committed": "2026-03-04", "funding": "FSO", "gaps": ["No verbal HCA", "24d no activity", "Closing 14d overdue"], "severity": "critical"}, {"id": "4637899001348561356", "name": "David Collis", "owner": "Heidi Brdoch", "owner_email": "heidi.brdoch@trilogycare.com.au", "hcp": "Level 3", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 23, "closing_overdue": 10, "committed": "2026-02-19", "funding": "FSO", "gaps": ["No verbal HCA", "23d no activity", "Closing 10d overdue", "CP stuck: 0. New"], "severity": "critical"}, {"id": "4637899001366286759", "name": "Ernest Lester Rollins", "owner": "Matthew Farrelly", "owner_email": "matthew.farrelly@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 23, "closing_overdue": 14, "committed": "2026-03-12", "funding": "FSO", "gaps": ["No verbal HCA", "23d no activity", "Closing 14d overdue"], "severity": "critical"}, {"id": "4637899001370513964", "name": "Minerva Fontanilla", "owner": "Luke Saito", "owner_email": "luke.saito@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 23, "closing_overdue": 22, "committed": "2026-03-06", "funding": "FSO", "gaps": ["No verbal HCA", "23d no activity", "Closing 22d overdue"], "severity": "critical"}, {"id": "4637899001375546222", "name": "Thomas Chow", "owner": "Luke Saito", "owner_email": "luke.saito@trilogycare.com.au", "hcp": "Level 3", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 17, "closing_overdue": 20, "committed": "2026-03-10", "funding": "MSO", "gaps": ["No verbal HCA", "17d no activity", "Closing 20d overdue", "CP stuck: 0. New"], "severity": "critical"}, {"id": "4637899001383314292", "name": "Robert Wenzel", "owner": "Matthew Farrelly", "owner_email": "matthew.farrelly@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 17, "closing_overdue": 21, "committed": "2026-03-16", "funding": "FSO", "gaps": ["No verbal HCA", "17d no activity", "Closing 21d overdue", "CP stuck: 2. CP Drafted"], "severity": "critical"}, {"id": "4637899001363821312", "name": "Mrs Sharon Kai LOITERTON", "owner": "Corey McConkie", "owner_email": "corey.mcconkie@trilogycare.com.au", "hcp": "Level 3", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "", "days_inactive": 16, "closing_overdue": 13, "committed": "2026-03-02", "funding": "FSO", "gaps": ["No verbal HCA", "16d no activity", "Closing 13d overdue"], "severity": "critical"}, {"id": "4637899001380852485", "name": "Rhonda Versteege", "owner": "Caitlin Burrill", "owner_email": "caitlin.burrill@trilogycare.com.au", "hcp": "SaH Level 5", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 16, "closing_overdue": 15, "committed": "2026-03-13", "funding": "MSO", "gaps": ["No verbal HCA", "16d no activity", "Closing 15d overdue"], "severity": "critical"}, {"id": "4637899001384090730", "name": "Ian Meredith", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 16, "closing_overdue": 15, "committed": "2026-03-17", "funding": "MSO", "gaps": ["No verbal HCA", "16d no activity", "Closing 15d overdue", "CP stuck: 0. New"], "severity": "critical"}, {"id": "4637899001384889881", "name": "Mrs Lorraine ENDICOTT", "owner": "Corey McConkie", "owner_email": "corey.mcconkie@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 16, "closing_overdue": 15, "committed": "2026-03-17", "funding": "MSO", "gaps": ["No verbal HCA", "16d no activity", "Closing 15d overdue", "CP stuck: 0. New"], "severity": "critical"}, {"id": "4637899001350009613", "name": "Rosalind Neuman", "owner": "Heidi Brdoch", "owner_email": "heidi.brdoch@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 15, "closing_overdue": 10, "committed": "2026-02-23", "funding": "FSO", "gaps": ["No verbal HCA", "15d no activity", "Closing 10d overdue"], "severity": "critical"}, {"id": "4637899001355472913", "name": "Dianne Holt", "owner": "Hunter Goodfellow", "owner_email": "hunter.goodfellow@trilogycare.com.au", "hcp": "Level 1", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 15, "closing_overdue": 13, "committed": "2026-02-25", "funding": "MSO", "gaps": ["No verbal HCA", "15d no activity", "Closing 13d overdue"], "severity": "critical"}, {"id": "4637899001377228530", "name": "Walter Wing", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 3", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 15, "closing_overdue": 13, "committed": "2026-03-11", "funding": "MSO", "gaps": ["No verbal HCA", "15d no activity", "Closing 13d overdue", "CP stuck: 2. CP Drafted"], "severity": "critical"}, {"id": "4637899001353681863", "name": "Mr William Alexander Tyrie JACKSON (Bill)", "owner": "Sophie Farrow", "owner_email": "sophie.farrow@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": true, "cp_stage": "4. CP Sent", "days_inactive": 29, "closing_overdue": 19, "committed": "2026-02-23", "funding": "FSO", "gaps": ["29d no activity", "Closing 19d overdue"], "severity": "warning"}, {"id": "4637899001330169488", "name": "Graham Weeks", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 14, "closing_overdue": 13, "committed": "2026-02-09", "funding": "MSO", "gaps": ["No verbal HCA", "14d no activity", "Closing 13d overdue"], "severity": "warning"}, {"id": "4637899001391218474", "name": "Christos Bouras", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 14, "closing_overdue": 13, "committed": "2026-03-24", "funding": "MSO", "gaps": ["No verbal HCA", "14d no activity", "Closing 13d overdue", "CP stuck: 0. New"], "severity": "warning"}, {"id": "4637899001391973942", "name": "Maja Costello", "owner": "Caitlin Burrill", "owner_email": "caitlin.burrill@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 14, "closing_overdue": 14, "committed": "2026-03-23", "funding": "FSO", "gaps": ["No verbal HCA", "14d no activity", "Closing 14d overdue", "CP stuck: 0. New"], "severity": "warning"}, {"id": "4637899001361302452", "name": "Anthony David Heyes", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 13, "closing_overdue": 9, "committed": "2026-03-02", "funding": "MSO", "gaps": ["No verbal HCA", "13d no activity", "Closing 9d overdue"], "severity": "warning"}, {"id": "4637899001391402645", "name": "Kenneth (Ken) Richardson", "owner": "Heidi Brdoch", "owner_email": "heidi.brdoch@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 13, "closing_overdue": 13, "committed": "2026-03-23", "funding": "MSO", "gaps": ["No verbal HCA", "13d no activity", "Closing 13d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001395771877", "name": "Geoff (Geoffrey) Ablett", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "SaH Level 8", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 13, "closing_overdue": 8, "committed": "2026-03-27", "funding": "MSO", "gaps": ["No verbal HCA", "13d no activity", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001190501972", "name": "Manuel Inandan", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 11, "closing_overdue": 15, "committed": "", "funding": "MSO", "gaps": ["No verbal HCA", "11d no activity", "Closing 15d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001391657969", "name": "Kathleen Barnes", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "SaH Level 7", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 11, "closing_overdue": 13, "committed": "2026-03-23", "funding": "MSO", "gaps": ["No verbal HCA", "11d no activity", "Closing 13d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001369455069", "name": "Mr John Edward HUMBLER", "owner": "Corey McConkie", "owner_email": "corey.mcconkie@trilogycare.com.au", "hcp": "Level 3", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 10, "closing_overdue": 10, "committed": "", "funding": "MSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001371300524", "name": "Mr Alex SHEMANSKY", "owner": "Sophie Farrow", "owner_email": "sophie.farrow@trilogycare.com.au", "hcp": "Level 2", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 10, "closing_overdue": 10, "committed": "2026-03-06", "funding": "MSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001389739089", "name": "Dalal Elkhawand", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 10, "closing_overdue": 13, "committed": "2026-03-20", "funding": "MSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 13d overdue"], "severity": "warning"}, {"id": "4637899001391218227", "name": "John Copp", "owner": "Luke Saito", "owner_email": "luke.saito@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 10, "closing_overdue": 10, "committed": "2026-03-23", "funding": "MSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 10d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001392947691", "name": "Raffaele Colasante", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 10, "closing_overdue": 10, "committed": "2026-03-25", "funding": "MSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 10d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001393360683", "name": "Kenneth SHIPP", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 2", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 10, "closing_overdue": 8, "committed": "2026-03-24", "funding": "FSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001395099069", "name": "Peter James Mcdonald", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 10, "closing_overdue": 8, "committed": "2026-03-26", "funding": "FSO", "gaps": ["No verbal HCA", "10d no activity", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001377228050", "name": "Neville Unicomb", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 9, "closing_overdue": 14, "committed": "2026-03-11", "funding": "FSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 14d overdue"], "severity": "warning"}, {"id": "4637899001389007761", "name": "Jo-Anne Lahey", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 9, "closing_overdue": 13, "committed": "2026-03-20", "funding": "MSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 13d overdue"], "severity": "warning"}, {"id": "4637899001389706776", "name": "knud Jeppersen", "owner": "Luke Saito", "owner_email": "luke.saito@trilogycare.com.au", "hcp": "Level 2", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 9, "closing_overdue": 13, "committed": "2026-03-20", "funding": "MSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 13d overdue"], "severity": "warning"}, {"id": "4637899001394101522", "name": "Peter Rogers", "owner": "Corey McConkie", "owner_email": "corey.mcconkie@trilogycare.com.au", "hcp": "AT Medium", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 9, "closing_overdue": 9, "committed": "2026-03-25", "funding": "FSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 9d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001394899307", "name": "Learne Crean", "owner": "Hunter Goodfellow", "owner_email": "hunter.goodfellow@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 9, "closing_overdue": 10, "committed": "2026-03-25", "funding": "FSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 10d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001394899630", "name": "Domenic (Domenico) Certo", "owner": "Hunter Goodfellow", "owner_email": "hunter.goodfellow@trilogycare.com.au", "hcp": "Level 2", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 9, "closing_overdue": 9, "committed": "2026-03-25", "funding": "FSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 9d overdue"], "severity": "warning"}, {"id": "4637899001399819176", "name": "Cheryl Zimsen", "owner": "Luke Saito", "owner_email": "luke.saito@trilogycare.com.au", "hcp": "AT Medium", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 9, "closing_overdue": 9, "committed": "2026-03-30", "funding": "FSO", "gaps": ["No verbal HCA", "9d no activity", "Closing 9d overdue"], "severity": "warning"}, {"id": "4637899001387940894", "name": "Kerry Beddie", "owner": "Hunter Goodfellow", "owner_email": "hunter.goodfellow@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 8, "closing_overdue": 15, "committed": "2026-03-19", "funding": "FSO", "gaps": ["No verbal HCA", "8d no activity", "Closing 15d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001388679062", "name": "Mahmuda Hasna", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 8, "closing_overdue": 13, "committed": "2026-03-19", "funding": "MSO", "gaps": ["No verbal HCA", "8d no activity", "Closing 13d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001393675939", "name": "Adriana Todd", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": true, "cp_stage": "2. CP Drafted", "days_inactive": 8, "closing_overdue": 9, "committed": "2026-03-25", "funding": "MSO", "gaps": ["8d no activity", "Closing 9d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001395771380", "name": "Phil (Felicity) Pepe", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 8, "closing_overdue": 8, "committed": "2026-03-26", "funding": "MSO", "gaps": ["No verbal HCA", "8d no activity", "Closing 8d overdue", "CP stuck: 0. New"], "severity": "warning"}, {"id": "4637899001396948041", "name": "Attila PALASTHY", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 8, "closing_overdue": 13, "committed": "2026-03-26", "funding": "MSO", "gaps": ["No verbal HCA", "8d no activity", "Closing 13d overdue"], "severity": "warning"}, {"id": "4637899001397805233", "name": "Neville Gossow", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 2", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 8, "closing_overdue": 8, "committed": "2026-03-27", "funding": "MSO", "gaps": ["No verbal HCA", "8d no activity", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001398462659", "name": "Donna Chatterton", "owner": "Caitlin Burrill", "owner_email": "caitlin.burrill@trilogycare.com.au", "hcp": "Level 3", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 8, "closing_overdue": 8, "committed": "2026-03-27", "funding": "MSO", "gaps": ["No verbal HCA", "8d no activity", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899000359747737", "name": "Harold Stewart", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 7, "closing_overdue": 13, "committed": "2026-03-27", "funding": "", "gaps": ["No verbal HCA", "Closing 13d overdue"], "severity": "warning"}, {"id": "4637899001364963647", "name": "DALE WOUTERS", "owner": "Telesia Mau'u", "owner_email": "telesia.mauu@trilogycare.com.au", "hcp": "Restorative Care", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 7, "closing_overdue": 10, "committed": "2026-03-10", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001365161104", "name": "Mr Brian Cyril FOWLER", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "SaH Level 7", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 7, "closing_overdue": 8, "committed": "2026-03-03", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001369750876", "name": "Mrs Joan Lorraine WILLMAN", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 7, "closing_overdue": 10, "committed": "", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001369992426", "name": "Mrs Liberata TEGG", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 7, "closing_overdue": 9, "committed": "", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 9d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001370833787", "name": "Kylie Miller", "owner": "Caitlin Burrill", "owner_email": "caitlin.burrill@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 7, "closing_overdue": 8, "committed": "2026-03-06", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001371318907", "name": "Mr Colin Eastham", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 1", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 7, "closing_overdue": 10, "committed": "", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001377097964", "name": "Therese Berrigan", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 7, "closing_overdue": 13, "committed": "2026-03-11", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 13d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001377857930", "name": "Patrcia Goulding", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 3", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 7, "closing_overdue": 10, "committed": "2026-03-11", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001383419100", "name": "Lee Jackson", "owner": "Hunter Goodfellow", "owner_email": "hunter.goodfellow@trilogycare.com.au", "hcp": "Level 1", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "0. New", "days_inactive": 7, "closing_overdue": 9, "committed": "2026-03-16", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 9d overdue", "CP stuck: 0. New"], "severity": "warning"}, {"id": "4637899001384114118", "name": "David Stephenson", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 7, "closing_overdue": 8, "committed": "2026-03-17", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001384257161", "name": "Cheryl Cranwell", "owner": "Hunter Goodfellow", "owner_email": "hunter.goodfellow@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 7, "closing_overdue": 10, "committed": "2026-03-17", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 10d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001384889502", "name": "Robin Joseph jr BRENNAN", "owner": "Corey McConkie", "owner_email": "corey.mcconkie@trilogycare.com.au", "hcp": "Level 3", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 7, "closing_overdue": 10, "committed": "2026-03-17", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001387491832", "name": "Raymond (John) Ellingson", "owner": "Luke Saito", "owner_email": "luke.saito@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 7, "closing_overdue": 10, "committed": "2026-03-19", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 10d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001389696549", "name": "Kay Morgan", "owner": "Anesu Taderera", "owner_email": "anesu.taderera@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 7, "closing_overdue": 10, "committed": "2026-03-20", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001391195182", "name": "Valerie Bland", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "SaH Level 7", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 7, "closing_overdue": 14, "committed": "2026-03-23", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 14d overdue"], "severity": "warning"}, {"id": "4637899001396592252", "name": "Sandra Musgrave", "owner": "Corey McConkie", "owner_email": "corey.mcconkie@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 7, "closing_overdue": 8, "committed": "2026-03-26", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001336647635", "name": "Khurigul Sidiqi", "owner": "Telesia Mau'u", "owner_email": "telesia.mauu@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 2, "closing_overdue": 8, "committed": "2026-02-12", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001376812776", "name": "Kuncharaoreddy Gondesi", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 2, "closing_overdue": 8, "committed": "2026-03-11", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001376930891", "name": "Mr Wayne Gregory MCINNES", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 2", "financial": "Part Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 2, "closing_overdue": 8, "committed": "", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001378972539", "name": "Rosalyn GINGER", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 2, "closing_overdue": 8, "committed": "2026-03-12", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001390037034", "name": "Jeanette Hogan", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 2, "closing_overdue": 8, "committed": "2026-03-20", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001392632610", "name": "Veronica Petelin", "owner": "Telesia Mau'u", "owner_email": "telesia.mauu@trilogycare.com.au", "hcp": "Level 1", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 2, "closing_overdue": 8, "committed": "2026-03-24", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001394195468", "name": "Mr Muneer JAJU", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 2, "closing_overdue": 9, "committed": "2026-03-25", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 9d overdue"], "severity": "warning"}, {"id": "4637899001394296702", "name": "Valerie Johnsen", "owner": "Matthew Farrelly", "owner_email": "matthew.farrelly@trilogycare.com.au", "hcp": "SaH Level 8", "financial": "Self-Funded Retiree", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 2, "closing_overdue": 14, "committed": "2026-03-25", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 14d overdue"], "severity": "warning"}, {"id": "4637899001398554281", "name": "John Murray", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 2, "closing_overdue": 9, "committed": "2026-03-27", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 9d overdue"], "severity": "warning"}, {"id": "4637899001404027644", "name": "Doreen Grant", "owner": "Caitlin Burrill", "owner_email": "caitlin.burrill@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 2, "closing_overdue": 8, "committed": "2026-03-31", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001411574703", "name": "Paul Meade", "owner": "Matthew Farrelly", "owner_email": "matthew.farrelly@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "", "days_inactive": 2, "closing_overdue": 16, "committed": "2026-04-07", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 16d overdue"], "severity": "warning"}, {"id": "4637899001390918507", "name": "Thai Thanh Phung", "owner": "Telesia Mau'u", "owner_email": "telesia.mauu@trilogycare.com.au", "hcp": "Level 4", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 1, "closing_overdue": 10, "committed": "2026-03-23", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899001393478772", "name": "Mr Andrew Curtis BRENNAN", "owner": "Ehtisham Muhammad Mehdi", "owner_email": "ehtisham.mehdi@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 1, "closing_overdue": 8, "committed": "", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001402195430", "name": "Linda Carr", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 1, "closing_overdue": 8, "committed": "2026-03-31", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 8d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899000042494238", "name": "Ruth kelly", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 0, "closing_overdue": 10, "committed": "2026-03-30", "funding": "", "gaps": ["No verbal HCA", "Closing 10d overdue"], "severity": "warning"}, {"id": "4637899000042494351", "name": "John Kelly", "owner": "Bonheur Chala", "owner_email": "bonheur.chala@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 0, "closing_overdue": 10, "committed": "2026-03-30", "funding": "", "gaps": ["No verbal HCA", "Closing 10d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001060985148", "name": "Mace John Bean", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "3. CP Approved", "days_inactive": 0, "closing_overdue": 8, "committed": "2025-07-09", "funding": "", "gaps": ["No verbal HCA", "Closing 8d overdue"], "severity": "warning"}, {"id": "4637899001387480133", "name": "Riberiyo Bandyambona", "owner": "Caitlin Burrill", "owner_email": "caitlin.burrill@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 0, "closing_overdue": 15, "committed": "2026-03-19", "funding": "FSO", "gaps": ["No verbal HCA", "Closing 15d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001391259473", "name": "Kym Walter", "owner": "Aprocina Anthony", "owner_email": "aprocina.anthony@trilogycare.com.au", "hcp": "Level 3", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "2. CP Drafted", "days_inactive": 0, "closing_overdue": 14, "committed": "2026-03-23", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 14d overdue", "CP stuck: 2. CP Drafted"], "severity": "warning"}, {"id": "4637899001392651166", "name": "Anita Weeks", "owner": "Stella Su'a", "owner_email": "stella.sua@trilogycare.com.au", "hcp": "Level 2", "financial": "Full Pensioner", "verbal_hca": false, "cp_stage": "4. CP Sent", "days_inactive": 0, "closing_overdue": 9, "committed": "2026-03-24", "funding": "MSO", "gaps": ["No verbal HCA", "Closing 9d overdue"], "severity": "warning"}];
+const REPS = {"Aprocina Anthony": {"total": 12, "critical": 1, "warning": 11, "watch": 0, "no_verbal": 12, "overdue": 12, "email": "aprocina.anthony@trilogycare.com.au"}, "Matthew Farrelly": {"total": 5, "critical": 3, "warning": 2, "watch": 0, "no_verbal": 5, "overdue": 5, "email": "matthew.farrelly@trilogycare.com.au"}, "Heidi Brdoch": {"total": 3, "critical": 2, "warning": 1, "watch": 0, "no_verbal": 3, "overdue": 3, "email": "heidi.brdoch@trilogycare.com.au"}, "Luke Saito": {"total": 6, "critical": 2, "warning": 4, "watch": 0, "no_verbal": 6, "overdue": 6, "email": "luke.saito@trilogycare.com.au"}, "Corey McConkie": {"total": 6, "critical": 2, "warning": 4, "watch": 0, "no_verbal": 6, "overdue": 6, "email": "corey.mcconkie@trilogycare.com.au"}, "Caitlin Burrill": {"total": 6, "critical": 1, "warning": 5, "watch": 0, "no_verbal": 6, "overdue": 6, "email": "caitlin.burrill@trilogycare.com.au"}, "Stella Su'a": {"total": 12, "critical": 2, "warning": 10, "watch": 0, "no_verbal": 11, "overdue": 12, "email": "stella.sua@trilogycare.com.au"}, "Hunter Goodfellow": {"total": 6, "critical": 1, "warning": 5, "watch": 0, "no_verbal": 6, "overdue": 6, "email": "hunter.goodfellow@trilogycare.com.au"}, "Sophie Farrow": {"total": 2, "critical": 0, "warning": 2, "watch": 0, "no_verbal": 1, "overdue": 2, "email": "sophie.farrow@trilogycare.com.au"}, "Bonheur Chala": {"total": 10, "critical": 0, "warning": 10, "watch": 0, "no_verbal": 10, "overdue": 10, "email": "bonheur.chala@trilogycare.com.au"}, "Telesia Mau'u": {"total": 4, "critical": 0, "warning": 4, "watch": 0, "no_verbal": 4, "overdue": 4, "email": "telesia.mauu@trilogycare.com.au"}, "Ehtisham Muhammad Mehdi": {"total": 8, "critical": 0, "warning": 8, "watch": 0, "no_verbal": 8, "overdue": 8, "email": "ehtisham.mehdi@trilogycare.com.au"}, "Anesu Taderera": {"total": 1, "critical": 0, "warning": 1, "watch": 0, "no_verbal": 1, "overdue": 1, "email": "anesu.taderera@trilogycare.com.au"}};
+
+const REP_EMAILS = {
+  "Aprocina Anthony":"aprocina.anthony@trilogycare.com.au",
+  "Matthew Farrelly":"matthew.farrelly@trilogycare.com.au",
+  "Heidi Brdoch":"heidi.brdoch@trilogycare.com.au",
+  "Luke Saito":"luke.saito@trilogycare.com.au",
+  "Corey McConkie":"corey.mcconkie@trilogycare.com.au",
+  "Caitlin Burrill":"caitlin.burrill@trilogycare.com.au",
+  "Stella Su'a":"stella.sua@trilogycare.com.au",
+  "Hunter Goodfellow":"hunter.goodfellow@trilogycare.com.au",
+  "Sophie Farrow":"sophie.farrow@trilogycare.com.au",
+  "Bonheur Chala":"bonheur.chala@trilogycare.com.au",
+  "Telesia Mau'u":"telesia.mauu@trilogycare.com.au",
+  "Ehtisham Muhammad Mehdi":"ehtisham.mehdi@trilogycare.com.au",
+  "Anesu Taderera":"anesu.taderera@trilogycare.com.au",
+};
+
+const nudgeCache = {};
+const emailSent = {};
+let WORKER_URL = localStorage.getItem('tc_worker_url') || '';
+let MANAGER_CC  = localStorage.getItem('tc_manager_cc') || '';
+
+function checkBanner() {
+  document.getElementById('api-banner').classList.toggle('hidden', !!WORKER_URL);
+  document.getElementById('banner-url').value = WORKER_URL;
+}
+checkBanner();
+
+function saveBannerUrl() {
+  const v = document.getElementById('banner-url').value.trim();
+  if (v) { WORKER_URL = v; localStorage.setItem('tc_worker_url', v); checkBanner(); showToast('Worker URL saved', 'success'); }
+}
+
+function toggleModal(open) {
+  document.getElementById('modal').classList.toggle('open', open);
+  if (open) {
+    document.getElementById('modal-url').value = WORKER_URL;
+    document.getElementById('modal-cc').value = MANAGER_CC;
+  }
+}
+
+function saveModal() {
+  const url = document.getElementById('modal-url').value.trim();
+  const cc  = document.getElementById('modal-cc').value.trim();
+  if (url) { WORKER_URL = url; localStorage.setItem('tc_worker_url', url); }
+  if (cc)  { MANAGER_CC = cc;  localStorage.setItem('tc_manager_cc', cc); }
+  checkBanner();
+  toggleModal(false);
+  showToast('Settings saved', 'success');
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function initials(n) { return n.split(' ').filter(w=>w).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+
+function zohoLink(r) {
+  return `<a href="${ZOHO_BASE}/${r.id}" target="_blank" rel="noopener" class="zoho-link">
+    <svg viewBox="0 0 12 12" fill="none"><path d="M7 1h4v4M11 1L6 6M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Zoho
+  </a>`;
+}
+
+function emailBtn(r, idx) {
+  const alreadySent = emailSent[r.id];
+  return `<button class="email-btn${alreadySent ? ' sent' : ''}" id="ebtn-${idx}"
+    onclick="sendFollowUpEmail(${idx})"
+    ${alreadySent ? 'disabled' : ''}>
+    <svg viewBox="0 0 12 12" fill="none"><path d="M1 3l5 3.5L11 3M1 3h10v7H1V3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    ${alreadySent ? 'Sent' : 'Email rep'}
+  </button>`;
+}
+
+async function sendFollowUpEmail(idx) {
+  const r = DATA[idx];
+  if (!WORKER_URL) { showToast('Configure Worker URL first — click Setup', 'error'); return; }
+  const btn = document.getElementById(`ebtn-${idx}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  const zoho_url = `${ZOHO_BASE}/${r.id}`;
+  try {
+    const resp = await fetch(`${WORKER_URL}/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: r.owner_email, to_name: r.owner.split(' ')[0],
+        consumer_name: r.name, hcp: r.hcp, cp_stage: r.cp_stage,
+        days_inactive: r.days_inactive, closing_overdue: r.closing_overdue,
+        gaps: r.gaps, zoho_url,
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      emailSent[r.id] = true;
+      if (btn) { btn.className = 'email-btn sent'; btn.textContent = 'Sent'; btn.disabled = true; }
+      showToast(`Email sent to ${r.owner.split(' ')[0]} (${r.owner_email})`, 'success');
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Failed — retry'; }
+      showToast(`Email failed: ${data.error || 'Unknown error'}`, 'error');
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Failed — retry'; }
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+function gapTag(g) {
+  return `<span class="gap-tag ${g.includes('HCA') ? 'danger' : 'warn'}">${g}</span>`;
+}
+
+function cardHTML(r, idx, autoNudge) {
+  const nudgeId = `nudge-${idx}`;
+  return `<div class="card ${r.severity}">
+    <div class="card-top">
+      <div class="card-name">${r.name}</div>
+      <div class="card-actions">
+        ${zohoLink(r)}
+        ${emailBtn(r, idx)}
+        <span class="badge ${r.severity}">${r.severity === 'critical' ? 'CRITICAL' : 'WARNING'}</span>
+      </div>
+    </div>
+    <div class="card-meta">
+      <span>Owner</span> ${r.owner} &nbsp;
+      <span>Email</span> ${r.owner_email} &nbsp;
+      <span>HCP</span> ${r.hcp} &nbsp;
+      <span>Financial</span> ${r.financial} &nbsp;
+      <span>CP</span> ${r.cp_stage || '—'} &nbsp;
+      <span>Funding</span> ${r.funding || '—'}
+      ${r.committed ? ` &nbsp;<span>Committed</span> ${r.committed}` : ''}
+    </div>
+    <div class="gaps">${r.gaps.map(gapTag).join('')}</div>
+    <div class="nudge-sec">
+      <div class="nudge-lbl">AI coaching nudge — ${r.owner.split(' ')[0]}</div>
+      <div class="nudge-txt${autoNudge ? ' loading' : ''}" id="${nudgeId}">${autoNudge ? 'Generating nudge...' : 'Click to generate'}</div>
+      ${!autoNudge ? `<button class="gen-btn" onclick="triggerNudge('${nudgeId}',${idx})">Generate</button>` : ''}
+    </div>
+  </div>`;
+}
+
+async function fetchNudge(r, elId) {
+  if (nudgeCache[elId]) {
+    const el = document.getElementById(elId);
+    if (el) { el.classList.remove('loading'); el.textContent = nudgeCache[elId]; }
+    return;
+  }
+  const el = document.getElementById(elId);
+  if (el) el.textContent = 'Generating...';
+  if (!WORKER_URL) {
+    if (el) { el.classList.remove('loading'); el.textContent = 'Configure Worker URL (Setup) to enable AI nudges.'; }
+    return;
+  }
+  const prompt = `You are a sales coaching assistant for Trilogy Care, an Australian aged care support-at-home provider. Write a specific, actionable coaching nudge (2-3 sentences) for ${r.owner} about their consumer "${r.name}". Key facts: HCP ${r.hcp}, ${r.financial}, CP stage: "${r.cp_stage || 'not started'}", inactive ${r.days_inactive} days, closing ${r.closing_overdue} days overdue. Issues: ${r.gaps.join(', ')}. Focus on the single most important next action — verbal HCA confirmation call if missing, or pushing CP forward. Be direct, warm, specific to aged care. No preamble.`;
+  try {
+    const resp = await fetch(`${WORKER_URL}/nudge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || 'Could not generate.';
+    nudgeCache[elId] = text;
+    const el2 = document.getElementById(elId);
+    if (el2) { el2.classList.remove('loading'); el2.textContent = text; }
+  } catch(e) {
+    const el2 = document.getElementById(elId);
+    if (el2) { el2.classList.remove('loading'); el2.textContent = `Error: ${e.message}`; }
+  }
+}
+
+function triggerNudge(elId, idx) { if (idx >= 0) fetchNudge(DATA[idx], elId); }
+
+async function fetchRepNudge(name, d, elId) {
+  if (!WORKER_URL) {
+    const el = document.getElementById(elId);
+    if (el) { el.classList.remove('loading'); el.textContent = 'Configure Worker URL to enable AI nudges.'; }
+    return;
+  }
+  const prompt = `You are a sales team leader for Trilogy Care, an Australian aged care support-at-home company. Write a weekly coaching nudge (3-4 sentences) for ${name}. Pipeline: ${d.total} consumers, ${d.critical} critical stalls (15+ days inactive, no verbal HCA), ${d.no_verbal}/${d.total} with no verbal HCA, all ${d.overdue} overdue closing dates. Core issue: verbal HCA calls not made after Care Plans sent. Be direct, constructive, name the behaviour to change. No preamble.`;
+  try {
+    const resp = await fetch(`${WORKER_URL}/nudge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+    const el = document.getElementById(elId);
+    if (el) { el.classList.remove('loading'); el.textContent = text; }
+  } catch(e) {
+    const el = document.getElementById(elId);
+    if (el) { el.classList.remove('loading'); el.textContent = `Error: ${e.message}`; }
+  }
+}
+
+function renderCritical() {
+  const crits = DATA.filter(r => r.severity === 'critical');
+  document.getElementById('critical-list').innerHTML = crits.map((r, i) => cardHTML(r, DATA.indexOf(r), true)).join('');
+  crits.forEach(r => fetchNudge(r, `nudge-${DATA.indexOf(r)}`));
+}
+
+function renderAll() {
+  const rep = document.getElementById('f-rep').value;
+  const sev = document.getElementById('f-sev').value;
+  const hca = document.getElementById('f-hca').value;
+  const cp  = document.getElementById('f-cp').value;
+  let f = DATA;
+  if (rep) f = f.filter(r => r.owner === rep);
+  if (sev) f = f.filter(r => r.severity === sev);
+  if (hca === 'no') f = f.filter(r => !r.verbal_hca);
+  if (hca === 'yes') f = f.filter(r => r.verbal_hca);
+  if (cp) f = f.filter(r => r.cp_stage === cp);
+  document.getElementById('all-list').innerHTML = f.length
+    ? f.map(r => cardHTML(r, DATA.indexOf(r), false)).join('')
+    : '<div style="padding:3rem;text-align:center;color:var(--dim);font-size:13px">No records match filters.</div>';
+}
+
+function renderReps() {
+  const maxT = Math.max(...Object.values(REPS).map(d => d.total));
+  const sorted = Object.entries(REPS).sort((a, b) => b[1].critical - a[1].critical || b[1].total - a[1].total);
+  document.getElementById('rep-grid').innerHTML = sorted.map(([name, d], i) => {
+    const col = d.critical >= 2 ? 'var(--red)' : d.critical === 1 ? 'var(--amber)' : 'var(--green)';
+    return `<div class="rep-card">
+      <div class="rep-hdr">
+        <div class="rep-av">${initials(name)}</div>
+        <div class="rep-nw"><div class="rep-name">${name}</div><div class="rep-sub">${d.email} · ${d.total} consumers</div></div>
+        <span class="badge ${d.critical >= 2 ? 'critical' : d.critical === 1 ? 'warning' : 'ok'}">${d.critical} crit</span>
+      </div>
+      <div class="rep-stats">
+        <div class="rs"><div class="rs-val" style="color:${col}">${d.critical}</div><div class="rs-lbl">Critical</div></div>
+        <div class="rs"><div class="rs-val" style="color:var(--amber)">${d.no_verbal}</div><div class="rs-lbl">No HCA</div></div>
+        <div class="rs"><div class="rs-val">${d.total}</div><div class="rs-lbl">Total</div></div>
+      </div>
+      <div class="rep-bar"><div class="rep-bar-fill" style="width:${Math.round(d.total/maxT*100)}%;background:${col}"></div></div>
+      <div class="nudge-lbl" style="margin-bottom:4px">Weekly coaching nudge</div>
+      <div class="nudge-txt loading" id="rn-${i}">Generating for ${name.split(' ')[0]}...</div>
+    </div>`;
+  }).join('');
+  sorted.forEach(([name, d], i) => fetchRepNudge(name, d, `rn-${i}`));
+}
+
+function renderSummary() {
+  const critCount = DATA.filter(r => r.severity === 'critical').length;
+  const noHCA = DATA.filter(r => !r.verbal_hca).length;
+  const total = DATA.length;
+  const overdueCount = DATA.filter(r => r.closing_overdue).length;
+  const pctNoHCA = total > 0 ? ((noHCA/total)*100).toFixed(1) : 0;
+
+  document.getElementById('sum-content').innerHTML = `
+    <div class="sum-grid">
+      <div class="sum-card">
+        <div class="sum-title">Key findings</div>
+        <div class="finding"><div class="fdot" style="background:var(--red)"></div><div>All ${overdueCount} consumers have an overdue closing date — systemic process gap across the whole team.</div></div>
+        <div class="finding"><div class="fdot" style="background:var(--red)"></div><div>${noHCA} of ${total} consumers (${pctNoHCA}%) have no verbal HCA.</div></div>
+        <div class="finding"><div class="fdot" style="background:var(--amber)"></div><div>${critCount} consumers are in critical stall (15+ days inactive, no verbal HCA) — highest dropout risk.</div></div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-title">Action priorities</div>
+        <div class="finding"><div class="fdot" style="background:var(--red)"></div><div><b style="color:var(--text)">Immediate:</b> Use "Email rep" buttons to push nudges to all ${critCount} critical consumer owners today.</div></div>
+        <div class="finding"><div class="fdot" style="background:var(--red)"></div><div><b style="color:var(--text)">Process fix:</b> Verbal HCA call within 48h of CP sent. Not happening for ${pctNoHCA}% of pipeline.</div></div>
+        <div class="finding"><div class="fdot" style="background:var(--amber)"></div><div><b style="color:var(--text)">Training:</b> HCA verbal confirmation script — when to call, what to say, how to log in Zoho.</div></div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-title">Rep leaderboard</div>
+      ${Object.entries(REPS).sort((a,b) => b[1].critical - a[1].critical).map(([name, d]) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--rule)">
+          <div style="width:175px;font-size:12px;color:var(--muted)">${name}</div>
+          <div style="flex:1;height:5px;background:var(--surface2);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${Math.round(d.critical/3*100)}%;background:${d.critical>=2?'var(--red)':d.critical===1?'var(--amber)':'var(--green)'};border-radius:2px"></div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:${d.critical>=2?'var(--red)':d.critical===1?'var(--amber)':'var(--dim)'};width:90px;text-align:right">${d.critical} crit / ${d.total}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function switchView(v) {
+  const views = ['critical','all','reps','summary','upload'];
+  document.querySelectorAll('.nav').forEach((el, i) => {
+    if (i < views.length) el.classList.toggle('active', views[i] === v);
+  });
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+}
+
+/* ── CSV Upload / Import ────────────────────────────────────── */
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) handleCSVUpload(file);
+  else showToast('Please drop a .csv file', 'error');
+});
+
+function makeEmail(name) {
+  const parts = name.toLowerCase().split(/\s+/);
+  return parts.length >= 2 ? `${parts[0]}.${parts[parts.length-1]}@trilogycare.com.au` : `${parts[0]}@trilogycare.com.au`;
+}
+
+function daysSince(dtStr) {
+  if (!dtStr || !dtStr.trim()) return null;
+  try {
+    const d = new Date(dtStr.trim().slice(0,10));
+    if (isNaN(d)) return null;
+    return Math.floor((new Date() - d) / 86400000);
+  } catch { return null; }
+}
+
+let importedData = null;
+let importedReps = null;
+
+function handleCSVUpload(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      const lines = text.split(/\r?\n/);
+      if (lines.length < 2) { showToast('CSV appears empty', 'error'); return; }
+
+      const headers = parseCSVLine(lines[0]);
+      const records = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = parseCSVLine(lines[i]);
+        const row = {};
+        headers.forEach((h, j) => row[h.trim()] = (cols[j] || '').trim());
+
+        const closing = row['Closing Date'] || '';
+        let closingOverdue = null;
+        if (closing) {
+          try {
+            const cd = new Date(closing.slice(0,10));
+            if (!isNaN(cd) && cd < new Date()) closingOverdue = Math.floor((new Date() - cd) / 86400000);
+          } catch {}
+        }
+
+        const verbalHca = (row['Verbal HCA'] || '').toLowerCase() === 'true';
+        const daysMod = daysSince(row['Modified Time'] || '');
+        const cpStage = row['CP Stage'] || '';
+        const numericId = (row['Record Id'] || '').replace('zcrm_', '');
+        const owner = row['Consumer Owner'] || '';
+        const ownerEmail = REP_EMAILS[owner] || makeEmail(owner);
+
+        const gaps = [];
+        if (!verbalHca) gaps.push('No verbal HCA');
+        if (daysMod && daysMod > 7) gaps.push(`${daysMod}d no activity`);
+        if (closingOverdue && closingOverdue > 0) gaps.push(`Closing ${closingOverdue}d overdue`);
+        if (['0. New', '2. CP Drafted'].includes(cpStage)) gaps.push(`CP stuck: ${cpStage}`);
+
+        const severity = (!verbalHca && daysMod && daysMod > 14) ? 'critical'
+          : gaps.length >= 2 ? 'warning' : 'watch';
+
+        records.push({
+          id: numericId, name: row['Consumer Name'] || '', owner, owner_email: ownerEmail,
+          hcp: row['HCP Level'] || '', financial: row['Financial Status'] || '',
+          verbal_hca: verbalHca, cp_stage: cpStage, days_inactive: daysMod,
+          closing_overdue: closingOverdue, committed: row['Committed Date'] || '',
+          funding: row['Funding Status'] || '', gaps, severity
+        });
+      }
+
+      records.sort((a, b) => {
+        const order = { critical: 0, warning: 1, watch: 2 };
+        return (order[a.severity] - order[b.severity]) || -((a.days_inactive||0) - (b.days_inactive||0));
+      });
+
+      const repMap = {};
+      records.forEach(r => {
+        if (!repMap[r.owner]) repMap[r.owner] = { total:0, critical:0, warning:0, watch:0, no_verbal:0, overdue:0, email:r.owner_email };
+        repMap[r.owner].total++;
+        repMap[r.owner][r.severity]++;
+        if (!r.verbal_hca) repMap[r.owner].no_verbal++;
+        if (r.closing_overdue) repMap[r.owner].overdue++;
+      });
+
+      importedData = records;
+      importedReps = repMap;
+
+      const critCount = records.filter(r => r.severity === 'critical').length;
+      const warnCount = records.filter(r => r.severity === 'warning').length;
+
+      const status = document.getElementById('upload-status');
+      status.style.display = 'block';
+      status.textContent = `Parsed ${records.length} consumers (${critCount} critical, ${warnCount} warning)`;
+
+      document.getElementById('import-summary').textContent =
+        `${records.length} consumers · ${critCount} critical · ${warnCount} warning · ${Object.keys(repMap).length} reps`;
+      document.getElementById('upload-preview').style.display = 'block';
+      document.getElementById('import-cards').innerHTML = records.slice(0, 5).map((r, i) =>
+        `<div class="card ${r.severity}" style="opacity:0.85">
+          <div class="card-top"><div class="card-name">${r.name}</div>
+          <span class="badge ${r.severity}">${r.severity.toUpperCase()}</span></div>
+          <div class="card-meta"><span>Owner</span> ${r.owner} &nbsp;<span>HCP</span> ${r.hcp}</div>
+          <div class="gaps">${r.gaps.map(gapTag).join('')}</div>
+        </div>`
+      ).join('') + (records.length > 5 ? `<div style="text-align:center;color:var(--dim);font-size:12px;padding:1rem">... and ${records.length - 5} more</div>` : '');
+
+      showToast(`CSV parsed: ${records.length} consumers found`, 'success');
+    } catch(err) {
+      showToast(`CSV parse error: ${err.message}`, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else current += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { result.push(current); current = ''; }
+      else current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function applyImportedData() {
+  if (!importedData || !importedReps) { showToast('No data to apply', 'error'); return; }
+  DATA = importedData;
+  REPS = importedReps;
+
+  // Update metrics
+  const critCount = DATA.filter(r => r.severity === 'critical').length;
+  const warnCount = DATA.filter(r => r.severity === 'warning').length;
+  const noHCA = DATA.filter(r => !r.verbal_hca).length;
+  const overdue = DATA.filter(r => r.closing_overdue).length;
+  const metricVals = document.querySelectorAll('.metric-val');
+  if (metricVals[0]) metricVals[0].textContent = critCount;
+  if (metricVals[1]) metricVals[1].textContent = warnCount;
+  if (metricVals[2]) metricVals[2].textContent = noHCA;
+  if (metricVals[3]) metricVals[3].textContent = overdue;
+
+  // Update date chip
+  const today = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.querySelector('.date-chip').textContent = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()} · ${DATA.length} consumers`;
+
+  // Update sidebar counts
+  const navEls = document.querySelectorAll('.sb-section:first-child .nav .nc');
+  if (navEls[0]) navEls[0].textContent = critCount;
+  if (navEls[1]) navEls[1].textContent = DATA.length;
+  if (navEls[2]) navEls[2].textContent = Object.keys(REPS).length;
+
+  // Rebuild rep nav + filter
+  document.getElementById('rep-nav').innerHTML = '';
+  const fRep = document.getElementById('f-rep');
+  fRep.innerHTML = '<option value="">All reps</option>';
+  Object.keys(REPS).sort().forEach(name => {
+    const d = REPS[name];
+    const el = document.createElement('div');
+    el.className = 'nav';
+    el.innerHTML = `${name.split(' ')[0]} <span class="nc ${d.critical>=2?'red':d.critical===1?'amber':''}">${d.total}</span>`;
+    el.onclick = () => { document.getElementById('f-rep').value = name; switchView('all'); renderAll(); };
+    document.getElementById('rep-nav').appendChild(el);
+    const o = document.createElement('option'); o.value = name; o.textContent = name; fRep.appendChild(o);
+  });
+
+  renderCritical();
+  renderAll();
+  renderReps();
+  renderSummary();
+  switchView('critical');
+  showToast(`Dashboard updated with ${DATA.length} consumers`, 'success');
+}
+
+// Sidebar rep nav
+const repNav = document.getElementById('rep-nav');
+Object.keys(REPS).sort().forEach(name => {
+  const d = REPS[name];
+  const el = document.createElement('div');
+  el.className = 'nav';
+  el.innerHTML = `${name.split(' ')[0]} <span class="nc ${d.critical>=2?'red':d.critical===1?'amber':''}">${d.total}</span>`;
+  el.onclick = () => { document.getElementById('f-rep').value = name; switchView('all'); renderAll(); };
+  repNav.appendChild(el);
+});
+
+// Rep filter dropdown
+const fRep = document.getElementById('f-rep');
+Object.keys(REPS).sort().forEach(name => {
+  const o = document.createElement('option'); o.value = name; o.textContent = name; fRep.appendChild(o);
+});
+
+renderCritical();
+renderAll();
+renderReps();
+renderSummary();
+</script>
+</body>
+</html>
