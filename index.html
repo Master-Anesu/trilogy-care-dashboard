@@ -967,7 +967,7 @@ function applyImportedData() {
     const el = document.createElement('div');
     el.className = 'nav';
     el.innerHTML = `${name.split(' ')[0]} <span class="nc ${d.critical>=2?'red':d.critical===1?'amber':''}">${d.total}</span>`;
-    el.onclick = () => { document.getElementById('f-rep').value = name; switchView('all'); renderAll(); };
+    el.onclick = () => openRepDashboard(name);
     document.getElementById('rep-nav').appendChild(el);
     const o = document.createElement('option'); o.value = name; o.textContent = name; fRep.appendChild(o);
   });
